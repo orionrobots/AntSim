@@ -1,0 +1,45 @@
+To make an antsim:
+
+* Simulation
+    * Lets use pixels - array of.
+    * They can contain stuff - pheromone, obstacle, food. Food has a value - that is consumed. Pheromone degrades if not present.
+    * pheromone will drift to adjacent squares if its above a threshold.
+    * Food -> up to 255.
+    * Pheromone -> Up to 255. 
+    * Drift value -> Up to 9 -> degrading is a dispersal, so looses 8 units, and 8 surrounding squares get pheromone + 1 (unless they have a higher value already).
+        * At each tick, if a square has less than 8the number of empty pheromons squares around it, it just looses 1 pheronmone.
+    * Ant's cannot move into an obstacle square. They can take up to 20 units of food.
+    * One pixel is home.
+* Ant
+    * Consumes a food unit per movement.
+    * Died if at 0.
+    * Can hold up to 100 food.
+    * Leaves a pheromone trail when moving -> 
+        * Nest to Food (last touched the nest)
+        * Food to nest (last touched the food source)
+        These two are independant. It leaves a trail with strength 32 (4 x 8 so allows for some dispersion.)
+        It will track these pheromones in front of it if it's found them.
+    * Will wander randomly if no food -> moving in a direction, sometimes changing direction, mostly forward.
+        * Forced to turn randomly at an obstacle.
+        * Will turn towards a square with the most pheromone from the current square. But may randomly not.
+            * Follow food trail when it has food too.
+            * Follow the without food trail when empty.
+
+* Nest starts with 100 ants.
+* When food gets back to the nest then +1 ant for 20 food (up to 100 ants). Ant keeps the rest of the food for it's wanderings.
+* An ant with less than 50 
+* Save ->
+    * Save the state of the world, and the state of the 100 ants. 
+
+---
+Explore mode: Go to places without pheremone while food > 50. Leaving to nest pheromone. If we find nest to food pheremone, 
+    switch to hungry mode.
+Hungry mode: Follow from nest to food pheromone. (food <50). Leaving more of the nest to food pheremone.
+Return mode: Follow to nest when food has been found. Leaving to food pheromone.
+When been to nest: switch to hungry or explore depending on food remaining.
+
+---
+Links to help:
+
+https://stackoverflow.com/questions/1201200/fast-algorithm-for-drawing-filled-circles
+
