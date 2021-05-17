@@ -1,4 +1,4 @@
-AntBrain.pyc
+*.pyc
 .venv
 .vscode
 .idea
