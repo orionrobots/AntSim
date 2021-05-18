@@ -8,6 +8,7 @@ window = pyglet.window.Window()
 Point = namedtuple("Point", ["x", "y"])
 
 ant_colour = 0, 0, 0
+ant_with_food_colour = 255, 255, 255
 background_colour = 43, 189, 98
 border_colour = 255, 255, 0
 nest_colour = 0xA0, 0x52, 0x2D
@@ -30,24 +31,36 @@ class Border:
     def collide(self, location):
         return (location.x < self.x + 1) or (location.y < self.y + 1) \
             or (location.x > self.width -1 ) or (location.y > self.height - 1)
-   
+
+def distance_sq(first_location: Point, second_location: Point) -> int:
+    return (second_location.x - first_location.x) ** 2 + (second_location.y - first_location.y) ** 2
+
 
 class Food:
     def __init__(self, location: Point, size=20):
         self.location = location
         self.size = size
+        self.size_sq = size * size
 
     def draw(self, batch: pyglet.graphics.Batch):
         return shapes.Circle(self.location.x, self.location.y, self.size, color=food_colour, batch=batch)
 
+    def collide(self, location):
+        return distance_sq(self.location, location) < self.size_sq
 
-class Ant: 
+
+class Ant:
     def __init__(self, location: Point):
         self.location = location
         self.speed = Point(0, 0)
+        self.found_food = False
 
     def draw(self, batch):
-        return shapes.Circle(self.location.x, self.location.y, 1, color=ant_colour, batch=batch)
+        if self.found_food:
+            color = ant_with_food_colour
+        else:
+            color = ant_colour
+        return shapes.Circle(self.location.x, self.location.y, 1, color=color, batch=batch)
 
     def update(self):
         CHANCE_OF_ANT_DIR_CHANGE = 10 # 1 in 10
@@ -55,10 +68,13 @@ class Ant:
             self.speed = Point(random.randint(-2, 2), random.randint(-2, 2))
         self.location = Point(self.location.x + self.speed.x, self.location.y + self.speed.y)
 
-    def collision(self):
-        self.speed = Point(-self.speed.x, -self.speed.y)
-        self.update()
-        self.update()
+    def collision(self, other):
+        if isinstance(other, Border):
+            self.speed = Point(-self.speed.x, -self.speed.y)
+            self.update()
+            self.update()
+        elif isinstance(other, Food):
+            self.found_food = True
 
 
 class Nest:
@@ -106,7 +122,9 @@ def update(dt):
     for ant in nest.ants:
         ant.update()
         if border.collide(ant.location):
-            ant.collision()
+            ant.collision(border)
+        if food.collide(ant.location):
+            ant.collision(food)
 
 
 pyglet.clock.schedule_interval(update, 1/60)
