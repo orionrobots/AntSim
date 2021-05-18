@@ -1,11 +1,13 @@
 import random
 from collections import namedtuple
-import pyglet
-from pyglet import shapes
-# step 1 - draw a world. - a big blank screen
-window = pyglet.window.Window()
+import sys
 
+import pygame
+
+pygame.init()
 Point = namedtuple("Point", ["x", "y"])
+
+screen = pygame.display.set_mode((800, 600))
 
 ant_colour = 0, 0, 0
 ant_with_food_colour = 255, 255, 255
@@ -18,20 +20,15 @@ food_trail_colour = 255, 0, 255
 # draw a flipping circle for our ant witch dies later  - https://pyglet.readthedocs.io/en/latest/modules/shapes.html#pyglet.shapes.Circle
 #    add the shape to a pyglet.graphics.Batch for drawing.
 class Border:
-    def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.width = window.width - 1
-        self.height = window.height - 1
+    def __init__(self, rect):
+        self.rect = rect
     
-    def draw(self, batch):
-        return shapes.BorderedRectangle(self.x, self.y, self.width, self.height, 
-            color=background_colour, 
-            border_color=border_colour, batch=batch)
+    def draw(self, surface):
+        surface.fill(background_colour, rect=self.rect)
+        pygame.draw.rect(surface, border_colour, rect=self.rect, width=2)
 
     def collide(self, location):
-        return (location.x < self.x + 1) or (location.y < self.y + 1) \
-            or (location.x > self.width -1 ) or (location.y > self.height - 1)
+        return not self.rect.collidepoint(*location)
 
 def distance_sq(first_location: Point, second_location: Point) -> int:
     return (second_location.x - first_location.x) ** 2 + (second_location.y - first_location.y) ** 2
@@ -50,13 +47,13 @@ class PheremoneField:
         if self.field[location] > self.saturation:
             self.field[location] = self.saturation
 
-    def draw(self, batch):
-        s_l = []
+    def draw(self, surface: pygame.Surface):
+        ph_surface = pygame.Surface((surface.get_width(), surface.get_height()), pygame.SRCALPHA)
         for location, strength in self.field.items():
-            ph_s = shapes.Rectangle(location.x, location.y, 1, 1, color=self.colour, batch=batch)
-            ph_s.opacity = strength
-            s_l.append(ph_s)
-        return s_l
+            colour = pygame.Color(self.colour)
+            colour.a = strength
+            pygame.draw.rect(ph_surface, colour, pygame.Rect(location, (3, 3)))
+        surface.blit(ph_surface, surface.get_rect())
 
     def update(self):
         for location in self.field.keys():
@@ -71,8 +68,8 @@ class Food:
         self.size = size
         self.size_sq = size * size
 
-    def draw(self, batch: pyglet.graphics.Batch):
-        return shapes.Circle(self.location.x, self.location.y, self.size, color=food_colour, batch=batch)
+    def draw(self, surface):
+        pygame.draw.circle(surface, food_colour, self.location, self.size)
 
     def collide(self, location):
         return distance_sq(self.location, location) < self.size_sq
@@ -84,12 +81,13 @@ class Ant:
         self.speed = Point(0, 0)
         self.found_food = False
 
-    def draw(self, batch):
+    def draw(self, surface: pygame.Surface):
         if self.found_food:
             color = ant_with_food_colour
         else:
             color = ant_colour
-        return shapes.Circle(self.location.x, self.location.y, 1, color=color, batch=batch)
+        pygame.draw.rect(surface, color, pygame.Rect(self.location, (3, 3)))
+        surface.set_at(self.location, color)
 
     def update(self):
         CHANCE_OF_ANT_DIR_CHANGE = 10 # 1 in 10
@@ -116,11 +114,9 @@ class Nest:
     def spawn_ant(self):
         self.ants.append(Ant(self.location))
 
-    def draw(self, batch: pyglet.graphics.Batch):
-        s_l = []
-        s_l.append(shapes.Circle(self.location.x, self.location.y, self.size, color=nest_colour, batch=batch))
-        s_l += [ant.draw(batch) for ant in self.ants]
-        return s_l
+    def draw(self, surface):
+        pygame.draw.circle(surface, nest_colour, self.location, self.size)
+        [ant.draw(surface) for ant in self.ants]
 
     def update(self):
         CHANCE_OF_ANT_SPAWN = 3
@@ -129,26 +125,22 @@ class Nest:
 
 
 nest = Nest(Point(200, 200), population_limit=255)
-border = Border()
+border = Border(screen.get_rect())
 food = Food(Point(400, 100))
 food_trail = PheremoneField(food_trail_colour)
-fps_display = pyglet.window.FPSDisplay(window=window)
 
-@window.event
-def on_draw():
-    window.clear()
-    
-    batch = pyglet.graphics.Batch()
-    
-    border_shapes = border.draw(batch)
-    food_shapes = food.draw(batch)
-    nest_shapes = nest.draw(batch)
-    food_trail_shapes = food_trail.draw(batch)
 
-    batch.draw()
-    fps_display.draw()
+def draw():
+    screen.fill(background_colour)
+       
+    border.draw(screen)
+    food.draw(screen)
+    nest.draw(screen)
+    food_trail.draw(screen)
+    pygame.display.flip()
 
-def update(dt):
+
+def update():
     nest.update()
     for ant in nest.ants:
         ant.update()
@@ -159,7 +151,9 @@ def update(dt):
         if ant.found_food:
             food_trail.add_pheremone(ant.location)
 
-
-
-pyglet.clock.schedule_interval(update, 1/60)
-pyglet.app.run()
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT: 
+            sys.exit()
+    update()
+    draw()
