@@ -11,6 +11,7 @@ ant_colour = 0, 0, 0
 background_colour = 43, 189, 98
 border_colour = 255, 255, 0
 nest_colour = 0xA0, 0x52, 0x2D
+food_colour = 255, 255, 0
 
 # draw a flipping circle for our ant witch dies later  - https://pyglet.readthedocs.io/en/latest/modules/shapes.html#pyglet.shapes.Circle
 #    add the shape to a pyglet.graphics.Batch for drawing.
@@ -30,6 +31,15 @@ class Border:
         return (location.x < self.x + 1) or (location.y < self.y + 1) \
             or (location.x > self.width -1 ) or (location.y > self.height - 1)
    
+
+class Food:
+    def __init__(self, location: Point, size=20):
+        self.location = location
+        self.size = size
+
+    def draw(self, batch: pyglet.graphics.Batch):
+        return shapes.Circle(self.location.x, self.location.y, self.size, color=food_colour, batch=batch)
+
 
 class Ant: 
     def __init__(self, location: Point):
@@ -75,6 +85,7 @@ class Nest:
 
 nest = Nest(Point(200, 200), population_limit=255)
 border = Border()
+food = Food(Point(400, 100))
 fps_display = pyglet.window.FPSDisplay(window=window)
 
 @window.event
@@ -84,6 +95,7 @@ def on_draw():
     batch = pyglet.graphics.Batch()
     
     border_shapes = border.draw(batch)
+    food_shapes = food.draw(batch)
     nest_shapes = nest.draw(batch)
 
     batch.draw()
