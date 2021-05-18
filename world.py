@@ -13,6 +13,7 @@ background_colour = 43, 189, 98
 border_colour = 255, 255, 0
 nest_colour = 0xA0, 0x52, 0x2D
 food_colour = 255, 255, 0
+food_trail_colour = 255, 0, 255
 
 # draw a flipping circle for our ant witch dies later  - https://pyglet.readthedocs.io/en/latest/modules/shapes.html#pyglet.shapes.Circle
 #    add the shape to a pyglet.graphics.Batch for drawing.
@@ -34,6 +35,34 @@ class Border:
 
 def distance_sq(first_location: Point, second_location: Point) -> int:
     return (second_location.x - first_location.x) ** 2 + (second_location.y - first_location.y) ** 2
+
+
+class PheremoneField:
+    def __init__(self, colour) -> None:
+        self.colour = colour
+
+        self.add_size = 10
+        self.saturation = 100
+        self.field = {}
+
+    def add_pheremone(self, location):
+        self.field[location] = self.field.get(location, 0) + self.add_size
+        if self.field[location] > self.saturation:
+            self.field[location] = self.saturation
+
+    def draw(self, batch):
+        s_l = []
+        for location, strength in self.field.items():
+            ph_s = shapes.Rectangle(location.x, location.y, 1, 1, color=self.colour, batch=batch)
+            ph_s.opacity = strength
+            s_l.append(ph_s)
+        return s_l
+
+    def update(self):
+        for location in self.field.keys():
+            self.field[location] -= 1
+            if self.field[location] == 0:
+                del self.field[location]
 
 
 class Food:
@@ -102,6 +131,8 @@ class Nest:
 nest = Nest(Point(200, 200), population_limit=255)
 border = Border()
 food = Food(Point(400, 100))
+food_trail = PheremoneField(food_trail_colour)
+[food_trail.add_pheremone(Point(50, 100)) for n in range(10)]
 fps_display = pyglet.window.FPSDisplay(window=window)
 
 @window.event
@@ -113,6 +144,7 @@ def on_draw():
     border_shapes = border.draw(batch)
     food_shapes = food.draw(batch)
     nest_shapes = nest.draw(batch)
+    food_trail_shapes = food_trail.draw(batch)
 
     batch.draw()
     fps_display.draw()
