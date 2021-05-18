@@ -132,7 +132,6 @@ nest = Nest(Point(200, 200), population_limit=255)
 border = Border()
 food = Food(Point(400, 100))
 food_trail = PheremoneField(food_trail_colour)
-[food_trail.add_pheremone(Point(50, 100)) for n in range(10)]
 fps_display = pyglet.window.FPSDisplay(window=window)
 
 @window.event
@@ -157,6 +156,9 @@ def update(dt):
             ant.collision(border)
         if food.collide(ant.location):
             ant.collision(food)
+        if ant.found_food:
+            food_trail.add_pheremone(ant.location)
+
 
 
 pyglet.clock.schedule_interval(update, 1/60)
