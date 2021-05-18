@@ -7,10 +7,10 @@ window = pyglet.window.Window()
 
 Point = namedtuple("Point", ["x", "y"])
 
-ant_colour = 255, 255, 255
-background_colour = 0, 0, 0
+ant_colour = 0, 0, 0
+background_colour = 43, 189, 98
 border_colour = 255, 255, 0
-# draw a fliping circle for our ant witch dies later  - https://pyglet.readthedocs.io/en/latest/modules/shapes.html#pyglet.shapes.Circle
+# draw a flipping circle for our ant witch dies later  - https://pyglet.readthedocs.io/en/latest/modules/shapes.html#pyglet.shapes.Circle
 #    add the shape to a pyglet.graphics.Batch for drawing.
 class Border:
     def __init__(self):
@@ -32,8 +32,8 @@ class Border:
 class Ant: 
     def __init__(self):
         self.location = Point(200, 200)
-        self.speed = Point(random.randint(-2, 2), random.randint(-2, 2))
-    
+        self.speed = Point(0, 0)
+
     def draw(self, batch):
         return shapes.Circle(self.location.x, self.location.y, 1, color=ant_colour, batch=batch)
 
@@ -48,7 +48,7 @@ class Ant:
         self.update()
         self.update()
 
-ants = [Ant() for n in range(1000)]
+ants = [Ant() for n in range(255)]
 border = Border()
 fps_display = pyglet.window.FPSDisplay(window=window)
 
