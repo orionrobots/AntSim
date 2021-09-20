@@ -66,7 +66,7 @@ class PheremoneField:
         diffuse = pygame.image.fromstring(blurred.tobytes("raw", image_mode), self.field.get_size(), image_mode)
         diffuse.set_alpha(1)
         self.field.blit(diffuse, self.field.get_rect(), special_flags=pygame.BLEND_MAX)
-        self.field.blit(self.update_field, self.field.get_rect(), special_flags=pygame.BLEND_ADD)
+        self.field.blit(self.update_field, self.field.get_rect(), special_flags=pygame.BLEND_MAX)
         self.update_field = pygame.Surface(screen.get_size())
 
     def sniff(self, location):
